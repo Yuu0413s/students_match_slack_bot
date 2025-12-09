@@ -1,0 +1,52 @@
+# ==========================
+# 共通 / OS / エディタ設定
+# ==========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# ==========================
+# 環境変数・秘密情報 (最重要！)
+# ==========================
+# APIキーなどを書くファイルは絶対にコミットしない
+.env
+.env.local
+.env.*.local
+*.env
+
+# ==========================
+# Frontend (React / Node.js)
+# ==========================
+node_modules/
+dist/
+build/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.next/
+
+# ==========================
+# Backend (Python)
+# ==========================
+# コンパイル済みファイル
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 仮想環境フォルダ (venv, env, .venvなどよく使う名前を網羅)
+venv/
+.venv/
+env/
+.env/
+
+# 配布用パッケージ作成時の生成物
+build/
+dist/
+*.egg-info/
+
+# 型チェックやテストのキャッシュ
+.mypy_cache/
+.pytest_cache/
