@@ -1,5 +1,8 @@
 """
-CRUD Operations for MUDS Matching System
+MUDS マッチングシステム - CRUD操作
+
+データベースの基本的なCRUD（Create, Read, Update, Delete）操作を提供する
+後輩、先輩、マッチングの各テーブルに対する操作関数を定義
 """
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -7,17 +10,20 @@ from app import models, schemas
 from loguru import logger
 
 
-# Junior CRUD Operations
+# ============================================================================
+# 後輩（Junior）のCRUD操作
+# ============================================================================
+
 def get_junior(db: Session, junior_id: int) -> Optional[models.Junior]:
     """
-    Get a junior by ID
+    IDで後輩を取得
 
     Args:
-        db: Database session
-        junior_id: Junior ID
+        db: データベースセッション
+        junior_id: 後輩のID
 
     Returns:
-        Junior object or None if not found
+        Optional[models.Junior]: 後輩オブジェクト、見つからない場合はNone
     """
     return db.query(models.Junior).filter(models.Junior.id == junior_id).first()
 
@@ -106,17 +112,20 @@ def update_junior(
     return db_junior
 
 
-# Senior CRUD Operations
+# ============================================================================
+# 先輩（Senior）のCRUD操作
+# ============================================================================
+
 def get_senior(db: Session, senior_id: int) -> Optional[models.Senior]:
     """
-    Get a senior by ID
+    IDで先輩を取得
 
     Args:
-        db: Database session
-        senior_id: Senior ID
+        db: データベースセッション
+        senior_id: 先輩のID
 
     Returns:
-        Senior object or None if not found
+        Optional[models.Senior]: 先輩オブジェクト、見つからない場合はNone
     """
     return db.query(models.Senior).filter(models.Senior.id == senior_id).first()
 
@@ -209,17 +218,20 @@ def update_senior(
     return db_senior
 
 
-# Matching CRUD Operations
+# ============================================================================
+# マッチング（Matching）のCRUD操作
+# ============================================================================
+
 def get_matching(db: Session, matching_id: int) -> Optional[models.Matching]:
     """
-    Get a matching by ID
+    IDでマッチングを取得
 
     Args:
-        db: Database session
-        matching_id: Matching ID
+        db: データベースセッション
+        matching_id: マッチングID
 
     Returns:
-        Matching object or None if not found
+        Optional[models.Matching]: マッチングオブジェクト、見つからない場合はNone
     """
     return db.query(models.Matching).filter(models.Matching.id == matching_id).first()
 
@@ -304,14 +316,17 @@ def update_matching(
 
 def get_pending_matchings_for_junior(db: Session, junior_id: int) -> List[models.Matching]:
     """
-    Get all pending matchings for a junior
+    後輩の全てのpendingマッチングを取得
+
+    特定の後輩に対してまだ承認されていないマッチングのリストを返す
+    先輩が「担当する」を押した際、他のマッチングをキャンセルするために使用
 
     Args:
-        db: Database session
-        junior_id: Junior ID
+        db: データベースセッション
+        junior_id: 後輩のID
 
     Returns:
-        List of pending Matching objects
+        List[models.Matching]: pendingステータスのマッチングリスト
     """
     return db.query(models.Matching).filter(
         models.Matching.junior_id == junior_id,
@@ -343,14 +358,17 @@ def cancel_other_matchings(db: Session, junior_id: int, accepted_matching_id: in
 
 def get_senior_matching_stats(db: Session, senior_id: int) -> dict:
     """
-    Get matching statistics for a senior
+    先輩のマッチング統計を取得
+
+    先輩の総マッチング数、完了数、進行中の件数を集計する
+    ダッシュボードでの表示や先輩の稼働状況確認に使用
 
     Args:
-        db: Database session
-        senior_id: Senior ID
+        db: データベースセッション
+        senior_id: 先輩のID
 
     Returns:
-        Dictionary with matching statistics
+        dict: マッチング統計（total_matchings, completed_count, ongoing_count）
     """
     total = db.query(models.Matching).filter(models.Matching.senior_id == senior_id).count()
     completed = db.query(models.Matching).filter(

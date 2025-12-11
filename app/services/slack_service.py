@@ -1,7 +1,8 @@
 """
-Slack Service for MUDS Matching System
+MUDS マッチングシステム - Slackサービス
 
-Handles Slack Bot interactions and notifications
+Slack Botの操作と通知機能を管理する
+マッチング通知、承認通知、キャンセル通知などを送信する
 """
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -14,13 +15,19 @@ from app import models
 
 class SlackService:
     """
-    Service class for Slack Bot integration
+    Slack Bot統合サービスクラス
 
-    Handles sending notifications and managing interactions
+    Slackへの通知送信とインタラクション管理を担当する
+    Block Kitを使用してリッチなメッセージを作成・送信する
     """
 
     def __init__(self):
-        """Initialize Slack WebClient"""
+        """
+        Slack WebClientを初期化
+
+        環境変数 SLACK_BOT_TOKEN からトークンを取得し、
+        Slack APIクライアントを設定する
+        """
         self.bot_token = os.getenv("SLACK_BOT_TOKEN")
         if not self.bot_token:
             logger.warning("SLACK_BOT_TOKEN not set, Slack features will be disabled")
@@ -35,16 +42,19 @@ class SlackService:
         matching_id: int
     ) -> List[Dict]:
         """
-        Create Slack blocks for senior notification
+        先輩向け通知のSlack Blocksを作成
+
+        後輩からの相談依頼を先輩に通知するためのメッセージブロックを生成する
+        ヘッダー、相談内容、「担当する」ボタンを含む
 
         Args:
-            junior: Junior model instance
-            matching_id: Matching ID
+            junior: 後輩モデルのインスタンス
+            matching_id: マッチングID
 
         Returns:
-            List of Slack block dictionaries
+            List[Dict]: Slack Block Kit形式のブロックリスト
         """
-        # Extract tags from interest areas
+        # 関心領域からタグを抽出（最大3つ）
         tags = [area.strip() for area in junior.interest_areas.split(',')[:3]]
 
         blocks = [
@@ -166,15 +176,18 @@ class SlackService:
         matching_id: int
     ) -> Optional[str]:
         """
-        Send notification to senior about new matching request
+        先輩に新しいマッチングリクエストの通知を送信
+
+        後輩からの相談依頼を先輩のDMに送信する
+        「担当する」ボタン付きのメッセージを作成する
 
         Args:
-            senior: Senior model instance
-            junior: Junior model instance
-            matching_id: Matching ID
+            senior: 先輩モデルのインスタンス
+            junior: 後輩モデルのインスタンス
+            matching_id: マッチングID
 
         Returns:
-            Message timestamp (ts) if successful, None otherwise
+            Optional[str]: 成功時はメッセージタイムスタンプ、失敗時はNone
         """
         if not self.client or not senior.slack_user_id:
             logger.warning(
@@ -245,14 +258,17 @@ class SlackService:
         senior: models.Senior
     ) -> bool:
         """
-        Send confirmation to junior about matched senior
+        後輩にマッチング確定の通知を送信
+
+        先輩が「担当する」を押した後、後輩に確定通知を送る
+        マッチングしたメンターの情報を含む
 
         Args:
-            junior: Junior model instance
-            senior: Senior model instance
+            junior: 後輩モデルのインスタンス
+            senior: 先輩モデルのインスタンス
 
         Returns:
-            True if successful, False otherwise
+            bool: 成功時はTrue、失敗時はFalse
         """
         if not self.client or not junior.slack_user_id:
             logger.warning(
@@ -322,10 +338,13 @@ class SlackService:
         matchings: List[models.Matching]
     ) -> None:
         """
-        Cancel notifications for other seniors when one accepts
+        先輩の1人が承認した際、他の先輩の通知をキャンセル
+
+        他の先輩に送信されたメッセージを更新し、
+        「この相談は他のメンターが担当しました」というメッセージに変更する
 
         Args:
-            matchings: List of cancelled Matching model instances
+            matchings: キャンセルされたマッチングのリスト
         """
         for matching in matchings:
             if matching.slack_message_ts and matching.senior.slack_user_id:

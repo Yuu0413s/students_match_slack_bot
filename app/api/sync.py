@@ -1,5 +1,8 @@
 """
-Sync API Endpoints for MUDS Matching System
+MUDS マッチングシステム - データ同期APIエンドポイント
+
+Google Sheetsから後輩・先輩のデータを取得し、データベースに同期する
+管理者権限が必要なエンドポイント群
 """
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
@@ -17,16 +20,19 @@ router = APIRouter(prefix="/api/v1/sync", tags=["sync"])
 
 def verify_admin_token(x_admin_token: str = Header(...)):
     """
-    Verify admin API token
+    管理者APIトークンの検証
+
+    リクエストヘッダーの X-Admin-Token を環境変数 ADMIN_API_KEY と照合する
+    トークンが一致しない場合は 401 Unauthorized を返す
 
     Args:
-        x_admin_token: Admin API token from header
+        x_admin_token: リクエストヘッダーからの管理者APIトークン
 
     Raises:
-        HTTPException: If token is invalid
+        HTTPException: トークンが無効な場合
 
     Returns:
-        True if token is valid
+        bool: トークンが有効な場合は True
     """
     admin_token = os.getenv("ADMIN_API_KEY")
     if not admin_token or x_admin_token != admin_token:
@@ -41,50 +47,53 @@ async def sync_juniors(
     _: bool = Depends(verify_admin_token)
 ):
     """
-    Sync junior data from Google Sheets to database
+    後輩データをGoogle Sheetsからデータベースに同期
+
+    Google Sheetsから後輩（相談者）のデータを取得し、データベースに保存する
+    既存のレコードはスキップし、新規レコードのみを追加する
 
     Args:
-        db: Database session
-        _: Admin token verification dependency
+        db: データベースセッション
+        _: 管理者トークン検証（依存性注入）
 
     Returns:
-        SyncResponse with sync statistics
+        SyncResponse: 同期統計情報（処理件数、新規件数、エラー情報）
 
     Raises:
-        HTTPException: If sync fails
+        HTTPException: Google Sheets APIエラーまたは同期失敗時
     """
     try:
-        # Initialize Sheets service
+        # Google Sheetsサービスを初期化
         sheets_service = SheetsService()
 
-        # Fetch data from Google Sheets
-        logger.info("Fetching juniors data from Google Sheets")
+        # Google Sheetsからデータを取得
+        logger.info("Google Sheetsから後輩データを取得中")
         juniors_data = sheets_service.fetch_juniors()
 
-        synced_count = 0
-        new_records = 0
-        updated_records = 0
-        errors = []
+        synced_count = 0      # 処理したレコード数
+        new_records = 0       # 新規作成したレコード数
+        updated_records = 0   # 更新したレコード数（現在は常に0）
+        errors = []           # エラーメッセージのリスト
 
-        # Process each junior record
+        # 各後輩レコードを処理
         for junior_data in juniors_data:
             try:
-                # Validate data with Pydantic schema
+                # Pydanticスキーマでデータをバリデーション
                 junior_schema = schemas.JuniorCreate(**junior_data)
 
-                # Check if junior already exists
+                # 既存の後輩レコードを確認
                 existing_junior = crud.get_junior_by_student_id(
                     db, junior_schema.student_id
                 )
 
                 if existing_junior:
-                    # Skip existing records (do not update)
-                    logger.debug(f"Skipping existing junior: {junior_schema.student_id} (already in database)")
+                    # 既存レコードはスキップ（更新しない）
+                    logger.debug(f"既存の後輩をスキップ: {junior_schema.student_id} (既にデータベースに存在)")
                 else:
-                    # Create new record only
+                    # 新規レコードのみ作成
                     crud.create_junior(db, junior_schema)
                     new_records += 1
-                    logger.debug(f"Created new junior: {junior_schema.student_id}")
+                    logger.debug(f"新規後輩を作成: {junior_schema.student_id}")
 
                 synced_count += 1
 
@@ -98,8 +107,8 @@ async def sync_juniors(
                 errors.append(error_msg)
 
         logger.info(
-            f"Junior sync completed: {synced_count} total, {new_records} new, "
-            f"{updated_records} updated, {len(errors)} errors"
+            f"後輩データの同期完了: 合計{synced_count}件, 新規{new_records}件, "
+            f"更新{updated_records}件, エラー{len(errors)}件"
         )
 
         return schemas.SyncResponse(
@@ -130,24 +139,27 @@ async def sync_seniors(
     _: bool = Depends(verify_admin_token)
 ):
     """
-    Sync senior data from Google Sheets to database
+    先輩データをGoogle Sheetsからデータベースに同期
+
+    Google Sheetsから先輩（メンター）のデータを取得し、データベースに保存する
+    既存のレコードはスキップし、新規レコードのみを追加する
 
     Args:
-        db: Database session
-        _: Admin token verification dependency
+        db: データベースセッション
+        _: 管理者トークン検証（依存性注入）
 
     Returns:
-        SyncResponse with sync statistics
+        SyncResponse: 同期統計情報（処理件数、新規件数、エラー情報）
 
     Raises:
-        HTTPException: If sync fails
+        HTTPException: Google Sheets APIエラーまたは同期失敗時
     """
     try:
-        # Initialize Sheets service
+        # Google Sheetsサービスを初期化
         sheets_service = SheetsService()
 
-        # Fetch data from Google Sheets
-        logger.info("Fetching seniors data from Google Sheets")
+        # Google Sheetsからデータを取得
+        logger.info("Google Sheetsから先輩データを取得中")
         seniors_data = sheets_service.fetch_seniors()
 
         synced_count = 0
@@ -155,25 +167,25 @@ async def sync_seniors(
         updated_records = 0
         errors = []
 
-        # Process each senior record
+        # 各先輩レコードを処理
         for senior_data in seniors_data:
             try:
-                # Validate data with Pydantic schema
+                # Pydanticスキーマでデータをバリデーション
                 senior_schema = schemas.SeniorCreate(**senior_data)
 
-                # Check if senior already exists
+                # 既存の先輩レコードを確認
                 existing_senior = crud.get_senior_by_student_id(
                     db, senior_schema.student_id
                 )
 
                 if existing_senior:
-                    # Skip existing records (do not update)
-                    logger.debug(f"Skipping existing senior: {senior_schema.student_id} (already in database)")
+                    # 既存レコードはスキップ（更新しない）
+                    logger.debug(f"既存の先輩をスキップ: {senior_schema.student_id} (既にデータベースに存在)")
                 else:
-                    # Create new record only
+                    # 新規レコードのみ作成
                     crud.create_senior(db, senior_schema)
                     new_records += 1
-                    logger.debug(f"Created new senior: {senior_schema.student_id}")
+                    logger.debug(f"新規先輩を作成: {senior_schema.student_id}")
 
                 synced_count += 1
 
@@ -187,8 +199,8 @@ async def sync_seniors(
                 errors.append(error_msg)
 
         logger.info(
-            f"Senior sync completed: {synced_count} total, {new_records} new, "
-            f"{updated_records} updated, {len(errors)} errors"
+            f"先輩データの同期完了: 合計{synced_count}件, 新規{new_records}件, "
+            f"更新{updated_records}件, エラー{len(errors)}件"
         )
 
         return schemas.SyncResponse(

@@ -1,7 +1,8 @@
 """
-Matching Service for MUDS Matching System
+MUDS マッチングシステム - マッチングサービス
 
-Implements the matching algorithm using TF-IDF and cosine similarity
+TF-IDF（用語頻度-逆文書頻度）とコサイン類似度を使用したマッチングアルゴリズムを実装
+後輩の相談内容と先輩の対応可能領域のテキスト類似度を計算し、最適な先輩を選出する
 """
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -22,15 +23,25 @@ except ImportError:
 
 class MatchingService:
     """
-    Service class for matching juniors with seniors
+    後輩と先輩をマッチングするサービスクラス
 
-    Uses TF-IDF vectorization and cosine similarity to calculate
-    matching scores between juniors' consultation content and
-    seniors' available areas.
+    TF-IDFベクトル化とコサイン類似度を使用して、
+    後輩の相談内容と先輩の対応可能領域の間のマッチングスコアを計算する
+
+    アルゴリズムの構成要素:
+    - テキスト前処理: MeCab形態素解析（利用可能な場合）または文字n-gram
+    - TF-IDFベクトル化: テキストを数値ベクトルに変換
+    - コサイン類似度: ベクトル間の類似度を計算（0.0〜1.0）
+    - スコアリング: 類似度60% + 稼働状況20% + マッチング履歴20%
     """
 
     def __init__(self):
-        """Initialize the matching service"""
+        """
+        マッチングサービスを初期化
+
+        MeCabが利用可能な場合は形態素解析を使用し、
+        そうでない場合は文字n-gramでテキストを処理する
+        """
         if MECAB_AVAILABLE:
             try:
                 self.tagger = MeCab.Tagger("-Owakati")
@@ -42,34 +53,37 @@ class MatchingService:
         else:
             self.use_mecab = False
 
-        # Initialize TF-IDF Vectorizer
+        # TF-IDFベクトライザーを初期化
         if self.use_mecab:
+            # MeCab使用時: 単語単位のn-gram（1-gram, 2-gram）
             self.vectorizer = TfidfVectorizer(
-                max_features=100,
-                min_df=1,
-                ngram_range=(1, 2)
+                max_features=100,    # 最大特徴数
+                min_df=1,            # 最小文書頻度
+                ngram_range=(1, 2)   # 1-gramと2-gramを使用
             )
         else:
-            # Use character n-grams for Japanese text when MeCab is not available
+            # MeCab不使用時: 文字単位のn-gram（日本語対応）
             self.vectorizer = TfidfVectorizer(
                 max_features=100,
                 min_df=1,
-                ngram_range=(2, 3),
-                analyzer='char'
+                ngram_range=(2, 3),  # 2文字と3文字のn-gram
+                analyzer='char'       # 文字単位で解析
             )
 
-        # Get configuration from environment
-        self.matching_top_n = int(os.getenv("MATCHING_TOP_N", "3"))
+        # 環境変数から設定を取得
+        self.matching_top_n = int(os.getenv("MATCHING_TOP_N", "3"))  # マッチングする先輩の人数
 
     def preprocess_text(self, text: str) -> str:
         """
-        Preprocess text for TF-IDF vectorization
+        TF-IDFベクトル化のためのテキスト前処理
+
+        余分な空白を削除し、MeCabが利用可能な場合は形態素解析を行う
 
         Args:
-            text: Input text
+            text: 入力テキスト
 
         Returns:
-            Preprocessed text
+            str: 前処理されたテキスト
 
         Examples:
             >>> service = MatchingService()
@@ -79,18 +93,18 @@ class MatchingService:
         if not text:
             return ""
 
-        # Remove extra whitespace
+        # 余分な空白を削除
         text = " ".join(text.split())
 
-        # Use MeCab for tokenization if available
+        # MeCabが利用可能な場合は形態素解析を実行
         if self.use_mecab:
             try:
                 return self.tagger.parse(text).strip()
             except Exception as e:
-                logger.error(f"MeCab parsing error: {e}")
+                logger.error(f"MeCab解析エラー: {e}")
                 return text
         else:
-            # Return as-is for character n-gram analysis
+            # 文字n-gram解析の場合はそのまま返す
             return text
 
     def calculate_similarity(
@@ -99,14 +113,17 @@ class MatchingService:
         senior_texts: List[str]
     ) -> List[float]:
         """
-        Calculate cosine similarity between junior's text and seniors' texts
+        後輩のテキストと先輩のテキスト群の間のコサイン類似度を計算
+
+        TF-IDFベクトル化を行い、後輩と各先輩の間の類似度を計算する
+        類似度は0.0（全く類似していない）から1.0（完全に一致）の範囲
 
         Args:
-            junior_text: Junior's consultation content
-            senior_texts: List of seniors' profile texts
+            junior_text: 後輩の相談内容テキスト
+            senior_texts: 先輩のプロフィールテキストのリスト
 
         Returns:
-            List of similarity scores (0.0 to 1.0)
+            List[float]: 類似度スコアのリスト（0.0〜1.0）
 
         Examples:
             >>> service = MatchingService()
@@ -123,23 +140,23 @@ class MatchingService:
             return [0.0] * len(senior_texts)
 
         try:
-            # Preprocess texts
+            # テキストを前処理
             junior_processed = self.preprocess_text(junior_text)
             senior_processed = [self.preprocess_text(t) for t in senior_texts]
 
-            # TF-IDF vectorization
+            # TF-IDFベクトル化を実行
             all_texts = [junior_processed] + senior_processed
             tfidf_matrix = self.vectorizer.fit_transform(all_texts)
 
-            # Calculate cosine similarity
-            junior_vector = tfidf_matrix[0:1]
-            senior_vectors = tfidf_matrix[1:]
+            # コサイン類似度を計算
+            junior_vector = tfidf_matrix[0:1]      # 後輩のベクトル
+            senior_vectors = tfidf_matrix[1:]      # 先輩のベクトル群
             similarities = cosine_similarity(junior_vector, senior_vectors)[0]
 
             return similarities.tolist()
 
         except Exception as e:
-            logger.error(f"Error calculating similarity: {e}")
+            logger.error(f"類似度計算エラー: {e}")
             return [0.0] * len(senior_texts)
 
     def calculate_matching_score(
@@ -149,20 +166,20 @@ class MatchingService:
         past_matching_count: int
     ) -> float:
         """
-        Calculate total matching score
+        総合マッチングスコアを計算
 
-        Scoring formula:
-        - Similarity: 60%
-        - Availability: 20%
-        - Matching history: 20%
+        スコア算出式:
+        - テキスト類似度: 60%（後輩の相談内容と先輩の対応領域の類似度）
+        - 稼働状況: 20%（先輩の忙しさステータス）
+        - マッチング履歴: 20%（過去のマッチング数、少ないほど高スコア）
 
         Args:
-            similarity_score: Cosine similarity score (0.0 ~ 1.0)
-            availability_status: Availability status (0=welcome, 1=busy, 2=very busy)
-            past_matching_count: Number of past matchings
+            similarity_score: コサイン類似度スコア（0.0〜1.0）
+            availability_status: 稼働状況（0=ウェルカム, 1=ちょっと忙しめ, 2=厳しい）
+            past_matching_count: 過去のマッチング数
 
         Returns:
-            Total score (0.0 ~ 1.0)
+            float: 総合スコア（0.0〜1.0）
 
         Examples:
             >>> service = MatchingService()
@@ -170,24 +187,24 @@ class MatchingService:
             >>> 0.8 < score < 0.9
             True
         """
-        # Similarity weight (60%)
+        # テキスト類似度の重み（60%）
         similarity_weight = 0.6
 
-        # Availability weight (20%)
+        # 稼働状況の重み（20%）
         availability_scores = {
-            0: 1.0,   # ウェルカム
-            1: 0.5,   # ちょっと忙しめ
-            2: 0.1    # 厳しい
+            0: 1.0,   # ウェルカム（積極的に対応可能）
+            1: 0.5,   # ちょっと忙しめ（対応可能だが時間がかかる）
+            2: 0.1    # 厳しい（対応困難）
         }
         availability_score = availability_scores.get(availability_status, 0.5)
         availability_weight = 0.2
 
-        # Matching history weight (20%)
-        max_matching_count = 20  # Upper limit for normalization
+        # マッチング履歴の重み（20%）
+        max_matching_count = 20  # 正規化の上限値
         matching_history_score = max(0, 1.0 - (past_matching_count / max_matching_count))
         matching_history_weight = 0.2
 
-        # Calculate total score
+        # 総合スコアを計算
         total_score = (
             similarity_score * similarity_weight +
             availability_score * availability_weight +
@@ -203,52 +220,58 @@ class MatchingService:
         top_n: int = None
     ) -> List[Tuple[models.Senior, float]]:
         """
-        Find matching seniors for a junior
+        後輩に対してマッチングする先輩を検索
+
+        以下のステップでマッチング先輩を選出する:
+        1. 後輩の相談カテゴリに対応可能なアクティブな先輩を取得
+        2. 後輩と各先輩のテキスト類似度を計算
+        3. 総合スコア（類似度+稼働状況+履歴）を計算
+        4. スコアの高い順にソートし、上位N名を返す
 
         Args:
-            db: Database session
-            junior: Junior model instance
-            top_n: Number of top seniors to return (default from config)
+            db: データベースセッション
+            junior: 後輩モデルのインスタンス
+            top_n: 返す先輩の人数（デフォルトは環境変数から）
 
         Returns:
-            List of tuples (Senior, matching_score) sorted by score
+            List[Tuple[Senior, float]]: (先輩, マッチングスコア)のタプルリスト、スコア降順
 
         Raises:
-            ValueError: If no active seniors found
+            ValueError: アクティブな先輩が見つからない場合
         """
         if top_n is None:
             top_n = self.matching_top_n
 
-        # Get active seniors who can handle the consultation category
+        # 後輩の相談カテゴリに対応可能なアクティブな先輩を取得
         seniors = db.query(models.Senior).filter(
             models.Senior.is_active == True,
             models.Senior.consultation_categories.like(f"%{junior.consultation_category}%")
         ).all()
 
         if not seniors:
-            logger.warning(f"No active seniors found for category: {junior.consultation_category}")
+            logger.warning(f"カテゴリ「{junior.consultation_category}」に対応可能なアクティブな先輩が見つかりません")
             raise ValueError("No available seniors found")
 
-        logger.info(f"Found {len(seniors)} active seniors for matching")
+        logger.info(f"マッチング対象の先輩を{len(seniors)}名検出しました")
 
-        # Build junior's query text
+        # 後輩のクエリテキストを構築
         junior_text = self._build_junior_text(junior)
 
-        # Build seniors' profile texts
+        # 先輩のプロフィールテキストを構築
         senior_texts = [self._build_senior_text(s) for s in seniors]
 
-        # Calculate similarities
+        # テキスト類似度を計算
         similarities = self.calculate_similarity(junior_text, senior_texts)
 
-        # Calculate total scores
+        # 総合スコアを計算
         scored_seniors = []
         for i, senior in enumerate(seniors):
-            # Get past matching count
+            # 過去のマッチング数を取得
             past_count = db.query(models.Matching).filter(
                 models.Matching.senior_id == senior.id
             ).count()
 
-            # Calculate total score
+            # 総合スコアを計算
             total_score = self.calculate_matching_score(
                 similarities[i],
                 senior.availability_status,
@@ -258,19 +281,19 @@ class MatchingService:
             scored_seniors.append((senior, total_score))
 
             logger.debug(
-                f"Senior {senior.student_id}: "
-                f"similarity={similarities[i]:.3f}, "
-                f"availability={senior.availability_status}, "
-                f"past_count={past_count}, "
-                f"total_score={total_score:.3f}"
+                f"先輩 {senior.student_id}: "
+                f"類似度={similarities[i]:.3f}, "
+                f"稼働状況={senior.availability_status}, "
+                f"過去マッチング数={past_count}, "
+                f"総合スコア={total_score:.3f}"
             )
 
-        # Sort by score (descending) and return top N
+        # スコアの降順でソートし、上位N名を返す
         scored_seniors.sort(key=lambda x: x[1], reverse=True)
         top_seniors = scored_seniors[:top_n]
 
         logger.info(
-            f"Top {len(top_seniors)} seniors selected with scores: "
+            f"上位{len(top_seniors)}名の先輩を選出しました。スコア: "
             f"{[f'{s.student_id}:{score:.3f}' for s, score in top_seniors]}"
         )
 
@@ -278,13 +301,16 @@ class MatchingService:
 
     def _build_junior_text(self, junior: models.Junior) -> str:
         """
-        Build text representation of junior for matching
+        マッチング用の後輩テキスト表現を構築
+
+        後輩の相談タイトル、内容、関心領域などを結合して
+        マッチング用のテキストを生成する
 
         Args:
-            junior: Junior model instance
+            junior: 後輩モデルのインスタンス
 
         Returns:
-            Combined text
+            str: 結合されたテキスト
         """
         parts = [
             junior.consultation_title,
@@ -303,13 +329,16 @@ class MatchingService:
 
     def _build_senior_text(self, senior: models.Senior) -> str:
         """
-        Build text representation of senior for matching
+        マッチング用の先輩テキスト表現を構築
+
+        先輩の関心領域、対応可能カテゴリ、経験などを結合して
+        マッチング用のテキストを生成する
 
         Args:
-            senior: Senior model instance
+            senior: 先輩モデルのインスタンス
 
         Returns:
-            Combined text
+            str: 結合されたテキスト
         """
         parts = [
             senior.interest_areas,

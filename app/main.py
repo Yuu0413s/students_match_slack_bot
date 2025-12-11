@@ -1,7 +1,8 @@
 """
-Main application for MUDS Matching System
+MUDS マッチングシステム - メインアプリケーション
 
-FastAPI application entry point
+学生マッチングシステムのバックエンドAPIのエントリーポイント
+FastAPIを使用して、後輩と先輩のマッチング機能を提供する
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +15,11 @@ from app.database import init_db
 from app.api import sync, matchings
 
 
-# Configure logging
-logger.remove()  # Remove default handler
+# ログ設定を構成
+# - 標準出力: カラー付きフォーマットでコンソールに出力
+# - ファイル出力1: 日次ローテーション、30日間保持（INFO以上）
+# - ファイル出力2: 日次ローテーション、90日間保持（ERROR以上）
+logger.remove()  # デフォルトハンドラを削除
 logger.add(
     sys.stdout,
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>",
@@ -40,31 +44,38 @@ logger.add(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Lifespan context manager for startup and shutdown events
+    アプリケーションのライフサイクル管理
+
+    起動時と終了時のイベントを管理するコンテキストマネージャー
+    データベースの初期化などを起動時に実行する
 
     Args:
-        app: FastAPI application instance
+        app: FastAPIアプリケーションインスタンス
     """
-    # Startup
-    logger.info("Starting MUDS Matching System...")
+    # 起動処理
+    logger.info("MUDS マッチングシステムを起動中...")
 
-    # Initialize database
+    # データベースを初期化
     try:
         init_db()
-        logger.info("Database initialized successfully")
+        logger.info("データベースの初期化に成功しました")
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
+        logger.error(f"データベースの初期化に失敗しました: {e}")
         raise
 
-    logger.info("MUDS Matching System started successfully")
+    logger.info("MUDS マッチングシステムの起動が完了しました")
 
     yield
 
-    # Shutdown
-    logger.info("Shutting down MUDS Matching System...")
+    # 終了処理
+    logger.info("MUDS マッチングシステムをシャットダウン中...")
 
 
-# Create FastAPI application
+# FastAPIアプリケーションを作成
+# - title: API名（Swagger UIに表示される）
+# - description: API説明
+# - version: APIバージョン
+# - lifespan: 起動・終了処理を管理するコンテキストマネージャー
 app = FastAPI(
     title="MUDS Matching System API",
     description="学生マッチングシステムのバックエンドAPI",
@@ -73,10 +84,12 @@ app = FastAPI(
 )
 
 
-# CORS configuration
+# CORS設定
+# フロントエンドからのアクセスを許可するオリジンのリスト
+# 本番環境では実際のフロントエンドのURLに変更すること
 origins = [
-    "http://localhost:3000",  # React dev server
-    "http://localhost:8000",  # FastAPI
+    "http://localhost:3000",  # Reactの開発サーバー
+    "http://localhost:8000",  # FastAPIの開発サーバー
 ]
 
 app.add_middleware(
@@ -88,7 +101,9 @@ app.add_middleware(
 )
 
 
-# Include routers
+# ルーターを追加
+# - sync.router: Google Sheetsとのデータ同期エンドポイント
+# - matchings.router: マッチング作成・管理エンドポイント
 app.include_router(sync.router)
 app.include_router(matchings.router)
 
@@ -96,10 +111,13 @@ app.include_router(matchings.router)
 @app.get("/")
 async def root():
     """
-    Root endpoint
+    ルートエンドポイント
+
+    APIの動作確認用エンドポイント
+    システムのバージョン情報と稼働状況を返す
 
     Returns:
-        Welcome message
+        dict: ウェルカムメッセージとシステム情報
     """
     return {
         "message": "MUDS Matching System API",
@@ -111,10 +129,13 @@ async def root():
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint
+    ヘルスチェックエンドポイント
+
+    サーバーの稼働状況を確認するためのエンドポイント
+    ロードバランサーやモニタリングツールから使用される
 
     Returns:
-        Health status
+        dict: サーバーの稼働状況
     """
     return {
         "status": "healthy",
