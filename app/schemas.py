@@ -277,3 +277,64 @@ class MatchingResultResponse(BaseModel):
     matching_id: Optional[int] = None
     matched_seniors: List[MatchingCandidate] = []
     message: Optional[str] = None
+
+
+# ==========================================
+# Authentication Schemas (Google OAuth)
+# ==========================================
+
+class UserBase(BaseModel):
+    """Base schema for User"""
+    email: EmailStr
+    name: str
+    picture: Optional[str] = None
+    user_type: Optional[str] = None
+
+
+class UserCreate(UserBase):
+    """Schema for creating a new user"""
+    google_id: str
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user information"""
+    name: Optional[str] = None
+    picture: Optional[str] = None
+    user_type: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UserInDB(UserBase):
+    """Schema for user stored in database"""
+    id: int
+    google_id: str
+    is_active: bool
+    last_login: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class Token(BaseModel):
+    """Schema for JWT access token"""
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    """Schema for token payload data"""
+    email: Optional[str] = None
+    google_id: Optional[str] = None
+
+
+class GoogleUserInfo(BaseModel):
+    """Schema for Google user information"""
+    id: str
+    email: str
+    verified_email: bool
+    name: str
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
+    picture: Optional[str] = None
+    locale: Optional[str] = None

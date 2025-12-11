@@ -7,32 +7,60 @@
 
 このシステムは以下の機能を提供します：
 
+- **Google OAuth認証**: Googleアカウントでのサインイン機能
 - **Google Sheetsからのデータ同期**: フォーム回答を自動的にデータベースに取り込み
 - **自動マッチング**: TF-IDFとコサイン類似度を使った高精度なマッチング
 - **Slack通知**: マッチング成立時に自動的にSlack DMで通知
 - **排他制御**: 複数の先輩が同時に応答しても競合しない設計
 
-## 🏗️ アーキテクチャ
+## 🏗️ ファイル構造
 
 ```
 ├── app/
-│   ├── api/              # API エンドポイント
-│   │   ├── sync.py       # データ同期API
-│   │   └── matchings.py  # マッチングAPI
-│   ├── services/         # ビジネスロジック
-│   │   ├── sheets_service.py    # Google Sheets連携
-│   │   ├── matching_service.py  # マッチングアルゴリズム
-│   │   └── slack_service.py     # Slack Bot連携
-│   ├── database.py       # DB設定
-│   ├── models.py         # SQLAlchemyモデル
-│   ├── schemas.py        # Pydanticスキーマ
-│   ├── crud.py           # CRUD操作
-│   └── main.py           # FastAPIエントリーポイント
-├── alembic/              # データベースマイグレーション
-├── data/                 # SQLiteデータベース
-├── logs/                 # ログファイル
-└── tests/                # テストコード
+│   ├── api/                      # APIエンドポイント
+│   │   ├── auth.py               # 認証API (Google OAuth)
+│   │   ├── sync.py               # データ同期API
+│   │   └── matchings.py          # マッチングAPI
+│   ├── services/                 # ビジネスロジック
+│   │   ├── auth_service.py       # Google OAuth認証
+│   │   ├── sheets_service.py     # Google Sheets連携
+│   │   ├── matching_service.py   # マッチングアルゴリズム
+│   │   └── slack_service.py      # Slack Bot連携
+│   ├── database.py               # DB設定
+│   ├── models.py                 # SQLAlchemyモデル (User/Junior/Senior/Matching)
+│   ├── schemas.py                # Pydanticスキーマ
+│   ├── crud.py                   # CRUD操作
+│   └── main.py                   # FastAPIエントリーポイント
+├── dashboard/                    # フロントエンド (React/Vite)
+├── alembic/                      # データベースマイグレーション
+├── data/                         # SQLiteデータベース
+├── logs/                         # ログファイル
+├── tests/                        # テストコード
+└── .env                          # 環境変数設定
 ```
+
+## 🔗 APIエンドポイント
+
+### 認証
+- `GET /auth/google` - Google認証URL取得
+- `GET /auth/google/callback` - OAuth認証コールバック
+- `POST /auth/token` - トークン取得（SPA用）
+- `GET /auth/me` - 現在のユーザー情報
+- `POST /auth/logout` - ログアウト
+
+### データ同期（管理者のみ）
+- `POST /api/v1/sync/juniors` - 後輩データ同期
+- `POST /api/v1/sync/seniors` - 先輩データ同期
+
+### マッチング（管理者のみ）
+- `POST /api/v1/matchings/create` - マッチング作成
+- `POST /api/v1/matchings/{id}/accept` - マッチング承認
+- `GET /api/v1/matchings/{id}` - マッチング詳細取得
+
+### その他
+- `GET /` - APIステータス確認
+- `GET /health` - ヘルスチェック
+- `GET /docs` - Swagger UI
 
 ## 🚀 セットアップ
 

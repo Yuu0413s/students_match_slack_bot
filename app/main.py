@@ -12,7 +12,7 @@ import os
 import sys
 
 from app.database import init_db
-from app.api import sync, matchings
+from app.api import sync, matchings, auth
 
 
 # ログ設定を構成
@@ -102,8 +102,10 @@ app.add_middleware(
 
 
 # ルーターを追加
+# - auth.router: Google OAuth認証エンドポイント
 # - sync.router: Google Sheetsとのデータ同期エンドポイント
 # - matchings.router: マッチング作成・管理エンドポイント
+app.include_router(auth.router)
 app.include_router(sync.router)
 app.include_router(matchings.router)
 
