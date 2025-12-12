@@ -1,82 +1,124 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-// DBのカラムに合わせた型定義
 interface SeniorData {
     id: number;
     last_name: string;
     first_name: string;
     grade: string;
-    department: string;
-    skills: string;
-    bio: string;
-    available_days: string;
-    availability_status: number; // 1: 募集中, 0: 停止中
+    department: string; // ここがnullになりがち
     job_search_completion: string;
     internship_experience: string;
-  // 他に必要なカラムがあればここに追加
+    availability_status: number;
 }
 
 export const SenpaiDashboard: React.FC = () => {
     const { logout, currentUser } = useAuth();
     const [myData, setMyData] = useState<SeniorData | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState<SeniorData | null>(null);
 
-  // 画面が表示されたらデータを取得
     useEffect(() => {
-        const fetchMyData = async () => {
         if (!currentUser?.email) return;
-
-        try {
-            const response = await fetch(`http://localhost:3001/api/seniors/${currentUser.email}`);
-            if (response.ok) {
-            const data = await response.json();
+        fetch(`http://localhost:3001/api/seniors/${currentUser.email}`)
+        .then(res => res.json())
+        .then(data => {
             setMyData(data);
-            } else {
-            console.error("データの取得に失敗しました");
-            }
+            setEditForm(data);
+        })
+        .catch(err => console.error(err));
+    }, [currentUser]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        if (!editForm) return;
+        const { name, value } = e.target;
+        setEditForm({ ...editForm, [name]: value });
+    };
+
+    const handleSave = async () => {
+        if (!editForm) return;
+        try {
+        const res = await fetch(`http://localhost:3001/api/seniors/${editForm.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(editForm),
+        });
+
+        if (res.ok) {
+            setMyData(editForm);
+            setIsEditing(false);
+            alert("保存しました！");
+        } else {
+            alert("保存に失敗しました（サーバーエラー）");
+        }
         } catch (error) {
-            console.error("通信エラー:", error);
+        console.error(error);
         }
     };
 
-        fetchMyData();
-    }, [currentUser]);
+    if (!myData || !editForm) return <p>読み込み中...</p>;
 
     return (
         <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <h2>先輩用ダッシュボード</h2>
-            <button onClick={logout} style={{ padding: '8px 16px', background: '#ff4d4f', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            ログアウト
-            </button>
+            <button onClick={logout} style={{ background: '#ff4d4f', color: 'white', border: 'none', padding: '8px' }}>ログアウト</button>
         </div>
+        <p>ログイン中: {currentUser?.email}</p>
+        <hr />
 
-        <p style={{ color: '#666' }}>ログイン中: {currentUser?.email}</p>
-        <hr style={{ margin: '20px 0' }} />
-
-        <div>
+        <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px', border: '1px solid #ddd' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
             <h3>📋 あなたの登録情報</h3>
+            {!isEditing ? (
+                <button onClick={() => setIsEditing(true)} style={{ padding: '8px 16px', cursor: 'pointer' }}>✏️ 編集する</button>
+            ) : (
+                <div>
+                <button onClick={handleSave} style={{ marginRight: '10px', background: '#4CAF50', color: 'white', border: 'none', padding: '8px 16px', cursor: 'pointer' }}>💾 保存</button>
+                <button onClick={() => { setIsEditing(false); setEditForm(myData); }} style={{ background: '#ccc', border: 'none', padding: '8px 16px', cursor: 'pointer' }}>キャンセル</button>
+                </div>
+            )}
+            </div>
 
-        {myData ? (
-            <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px', border: '1px solid #ddd' }}>
+        {isEditing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <label>
+                姓: <input name="last_name" value={editForm.last_name || ''} onChange={handleChange} />
+                </label>
+                <label>
+                名: <input name="first_name" value={editForm.first_name || ''} onChange={handleChange} />
+                </label>
+                <label>
+                学科: <input name="department" value={editForm.department || ''} onChange={handleChange} placeholder="例：データサイエンス学科" />
+                </label>
+                <label>
+                学年: <input name="grade" value={editForm.grade || ''} onChange={handleChange} />
+                </label>
+                <label>
+                就活状況: <input name="job_search_completion" value={editForm.job_search_completion || ''} onChange={handleChange} />
+                </label>
+                <label>
+                インターン経験: <input name="internship_experience" value={editForm.internship_experience || ''} onChange={handleChange} />
+                </label>
+                <label>
+                ステータス:
+                <select name="availability_status" value={editForm.availability_status} onChange={handleChange}>
+                    <option value={1}>募集中</option>
+                    <option value={0}>停止中</option>
+                </select>
+                </label>
+            </div>
+            ) : (
+            <div>
                 <p><strong>名前:</strong> {myData.last_name} {myData.first_name}</p>
+                <p><strong>学科:</strong> {myData.department || '(未登録)'}</p>
                 <p><strong>学年:</strong> {myData.grade}</p>
                 <p><strong>就活状況:</strong> {myData.job_search_completion}</p>
                 <p><strong>インターン経験:</strong> {myData.internship_experience}</p>
-
-            <div style={{ marginTop: '15px', padding: '10px', background: myData.availability_status ? '#e6fffa' : '#fff1f0', borderRadius: '4px' }}>
-                <strong>現在のステータス: </strong>
-                {myData.availability_status === 1 ? (
-                <span style={{ color: 'green', fontWeight: 'bold' }}>募集中 🟢</span>
-                ) : (
-                    <span style={{ color: 'red', fontWeight: 'bold' }}>停止中 🔴</span>
-                )}
+                <p><strong>ステータス:</strong> {myData.availability_status == 1 ? "募集中 🟢" : "停止中 🔴"}</p>
             </div>
-            </div>
-        ) : (
-            <p>データを読み込み中...</p>
-        )}
+            )}
         </div>
-    </div>
+        </div>
     );
 };

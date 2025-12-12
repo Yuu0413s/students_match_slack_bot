@@ -79,6 +79,47 @@ app.get('/api/seniors', (req, res) => {
     });
 });
 
+// 4. 先輩データの更新用API (編集機能)
+app.put('/api/seniors/:id', (req, res) => {
+    const { id } = req.params;
+    // job_search_completion を削除しました
+    const {
+        last_name, first_name, grade, department,
+        internship_experience,
+        availability_status
+    } = req.body;
+
+    // SQLからも job_search_completion を削除
+    // また、department が抜けていたため追加しました
+    const sql = `
+        UPDATE seniors
+        SET last_name = ?,
+            first_name = ?,
+            grade = ?,
+            department = ?,
+            internship_experience = ?,
+            availability_status = ?
+        WHERE id = ?
+    `;
+
+    // 配列からも job_search_completion を削除し、department を適切な位置に追加
+    db.run(sql, [
+        last_name,
+        first_name,
+        grade,
+        department,
+        internship_experience,
+        availability_status,
+        id
+    ], function(err) {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: '更新失敗' });
+        }
+        res.json({ message: '更新成功', changes: this.changes });
+    });
+});
+
 // サーバー起動
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
