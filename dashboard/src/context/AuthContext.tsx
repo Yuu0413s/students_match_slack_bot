@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import {  type User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { type User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 
 // ここでRoleを定義してexport
-export type UserRole = 'ADMIN' | 'SENPAI';
+export type UserRole = 'ADMIN' | 'SENIOR';
 
 interface AuthContextType {
     currentUser: User | null;
@@ -21,46 +21,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [loading, setLoading] = useState(true);
 
-  // バックエンドAPIに問い合わせる関数
+    // バックエンドAPIに問い合わせる関数
     const verifyUserWithBackend = async (email: string): Promise<UserRole | null> => {
         try {
-        const response = await fetch('http://localhost:3001/api/verify-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email }),
-        });
+            const response = await fetch('http://localhost:3001/api/verify-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            // バックエンドから返ってきた role を返す
-            return data.role as UserRole;
-        } else {
-            return null;
-        }
+            if (response.ok) {
+                const data = await response.json();
+                return data.role as UserRole;
+            } else {
+                return null;
+            }
         } catch (error) {
-        console.error("Backend connection failed:", error);
-        return null;
+            console.error("Backend connection failed:", error);
+            return null;
         }
     };
 
     const loginWithGoogle = async () => {
         try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const email = result.user.email;
-        if (!email) throw new Error("Email not found");
+            // 毎回アカウント選択画面を出す設定
+            googleProvider.setCustomParameters({
+                prompt: 'select_account'
+            });
 
-        // API問い合わせ
-        const role = await verifyUserWithBackend(email);
+            const result = await signInWithPopup(auth, googleProvider);
+            const email = result.user.email;
+            if (!email) throw new Error("Email not found");
 
-        if (!role) {
-            await signOut(auth);
-            alert("登録されていないアカウントです。（DBにメールアドレスがありません）");
-            return;
-        }
-        setUserRole(role);
+            // API問い合わせ
+            const role = await verifyUserWithBackend(email);
+
+            if (!role) {
+                await signOut(auth);
+                alert("登録されていないアカウントです。（DBにメールアドレスがありません）");
+                return;
+            }
+            setUserRole(role);
         } catch (error) {
-        console.error("Login failed", error);
-        await signOut(auth);
+            console.error("Login failed", error);
+            await signOut(auth);
         }
     };
 
@@ -77,32 +81,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user && user.email) {
-            const role = await verifyUserWithBackend(user.email);
-            if (role) {
-            setCurrentUser(user);
-            setUserRole(role);
+            if (user && user.email) {
+                const role = await verifyUserWithBackend(user.email);
+                if (role) {
+                    setCurrentUser(user);
+                    setUserRole(role);
+                } else {
+                    await signOut(auth);
+                    setCurrentUser(null);
+                    setUserRole(null);
+                }
             } else {
-            await signOut(auth);
-            setCurrentUser(null);
-            setUserRole(null);
+                setCurrentUser(null);
+                setUserRole(null);
             }
-        } else {
-            setCurrentUser(null);
-            setUserRole(null);
-        }
-        setLoading(false);
+            setLoading(false);
         });
         return unsubscribe;
     }, []);
 
     return (
         <AuthContext.Provider value={{ currentUser, userRole, loading, loginWithGoogle, loginAsTestAdmin, logout }}>
-        {!loading && children}
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
 
+// ▼▼▼ この部分が重要です！ここが抜けているとエラーになります ▼▼▼
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) throw new Error("useAuth must be used within an AuthProvider");
