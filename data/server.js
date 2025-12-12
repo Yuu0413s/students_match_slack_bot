@@ -2,7 +2,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const app = express();
-const PORT = 3001; // フロントエンド(3000)と被らないポート
+const PORT = 3001;
 
 // ミドルウェア設定
 app.use(cors());
@@ -10,46 +10,44 @@ app.use(express.json());
 
 // データベース接続
 const db = new sqlite3.Database('./muds_matching.db', (err) => {
-  if (err) {
-    console.error('DB接続エラー:', err.message);
-  } else {
-    console.log('muds_matching.db に接続しました');
-  }
+    if (err) {
+        console.error('DB接続エラー:', err.message);
+    } else {
+        console.log('muds_matching.db に接続しました');
+    }
 });
 
 // ログイン検証用API
 app.post('/api/verify-user', (req, res) => {
     const { email } = req.body;
-    console.log(`検証リクエスト受信: ${email}`);
 
-  // 特例：管理者テストアカウント
-    if (email === "test_admin@test.com") {
+  // 管理者テストアカウントの特例（必要であればサーバー側でも定義）
+    if (email === "y.shibata0820@gmail.com") {
     return res.json({ role: 'ADMIN', name: "テスト管理者" });
     }
 
-  // seniorsテーブルから検索
+  // seniorsテーブルからメールアドレスで検索
   const sql = `SELECT * FROM seniors WHERE email = ?`;
 
     db.get(sql, [email], (err, row) => {
-    if (err) {
-        console.error(err);
+        if (err) {
+            console.error(err);
         return res.status(500).json({ error: 'DBエラー' });
     }
 
     if (row) {
-      // 見つかったら「SENPAI」として返す
-      // ※row.name が無い場合は '名無し' になります
+      // ユーザーが見つかった場合
         return res.json({
-            role: 'SENPAI',
+            role: 'SENIOR',
             name: row.name || '名無し先輩'
         });
     } else {
-      // 見つからない場合
-        return res.status(401).json({ error: 'ユーザー未登録' });
+      // 見つからなかった場合
+        return res.status(401).json({ error: 'ユーザーが登録されていません' });
     }
     });
 });
 
 app.listen(PORT, () => {
-    console.log(`Backend Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
