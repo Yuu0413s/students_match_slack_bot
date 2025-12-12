@@ -224,6 +224,7 @@ class Matching(Base):
         matching_score: マッチングスコア（0.0〜1.0）
         matched_at: マッチング作成日時
         accepted_at: 先輩承諾日時
+        accepted_action_ts: ボタン押下日時（JST Float値、早い者勝ち判定用）
         feedback_sent_at: フィードバック送信日時
         completed_at: 完了日時
         feedback_content: フィードバック内容
@@ -268,6 +269,7 @@ class Matching(Base):
     # Relationships
     junior = relationship("Junior", back_populates="matchings")
     senior = relationship("Senior", back_populates="matchings")
+    candidates = relationship("MatchingCandidate", back_populates="matching", cascade="all, delete-orphan")
 
     # Constraints
     __table_args__ = (
