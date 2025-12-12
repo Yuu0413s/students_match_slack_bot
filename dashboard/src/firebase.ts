@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-// あなたのプロジェクトの設定情報（先ほどコピーしたもの）
 const firebaseConfig = {
     apiKey: "AIzaSyCjiVxogNbyr-XQTtj3DjB-7Ti5UyiqyFY",
     authDomain: "matching-system-e85e0.firebaseapp.com",
@@ -12,9 +11,9 @@ const firebaseConfig = {
     measurementId: "G-G819919S2D"
 };
 
-// 1. Firebaseアプリの初期化
+// Firebaseを初期化
 const app = initializeApp(firebaseConfig);
 
-// 2. 認証機能をエクスポート（ここが消えているとエラーになります！）
+// 認証機能を使うための準備
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
