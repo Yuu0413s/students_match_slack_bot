@@ -285,3 +285,55 @@ class Matching(Base):
 
     def __repr__(self):
         return f"<Matching(id={self.id}, junior_id={self.junior_id}, senior_id={self.senior_id}, status={self.status})>"
+    
+class MatchingCandidate(Base):
+    """
+    マッチング打診管理テーブル（旧 NotificationLog）
+    
+    排他制御およびメッセージ更新用。
+    誰に(slack_user_id)、どのメッセージ(slack_message_ts)を送ったかを管理する。
+
+    Attributes:
+        id: 主キー
+        matching_id: マッチングID（外部キー）
+        senior_id: 先輩ID（外部キー）
+        slack_user_id: 送信先SlackユーザーID
+        slack_message_ts: 送信したメッセージのタイムスタンプ
+        status: 状態（sent, clicked, cancelled）
+        created_at: 作成日時
+    """
+
+    __tablename__ = "matching_candidates"
+
+    # Primary Key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Foreign Keys
+    matching_id = Column(Integer, ForeignKey("matchings.id", ondelete="CASCADE"), nullable=False, index=True)
+    senior_id = Column(Integer, ForeignKey("seniors.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Slack Integration
+    slack_user_id = Column(String(50), nullable=False)
+    slack_message_ts = Column(String(50), nullable=False)
+
+    # Status
+    status = Column(String(20), nullable=False, default="sent")
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    # Relationships
+    matching = relationship("Matching", back_populates="candidates")
+    senior = relationship("Senior")
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('sent', 'clicked', 'cancelled')",
+            name="check_candidate_status",
+        ),
+        Index("idx_candidates_matching_senior", "matching_id", "senior_id", unique=True),
+    )
+
+    def __repr__(self):
+        return f"<MatchingCandidate(id={self.id}, matching_id={self.matching_id}, senior_id={self.senior_id}, status={self.status})>"
