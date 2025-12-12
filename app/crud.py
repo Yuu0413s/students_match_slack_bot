@@ -385,3 +385,173 @@ def get_senior_matching_stats(db: Session, senior_id: int) -> dict:
         "completed_count": completed,
         "ongoing_count": ongoing
     }
+
+
+# ============================================================================
+# ユーザー（User）のCRUD操作 - Google OAuth認証用
+# ============================================================================
+
+def get_user_by_id(db: Session, user_id: int) -> Optional[models.User]:
+    """
+    IDでユーザーを取得
+
+    Args:
+        db: データベースセッション
+        user_id: ユーザーのID
+
+    Returns:
+        Optional[models.User]: ユーザーオブジェクト、見つからない場合はNone
+    """
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
+    """
+    メールアドレスでユーザーを取得
+
+    Args:
+        db: データベースセッション
+        email: メールアドレス
+
+    Returns:
+        Optional[models.User]: ユーザーオブジェクト、見つからない場合はNone
+    """
+    return db.query(models.User).filter(models.User.email == email).first()
+
+
+def get_user_by_google_id(db: Session, google_id: str) -> Optional[models.User]:
+    """
+    Google IDでユーザーを取得
+
+    Args:
+        db: データベースセッション
+        google_id: Google ID
+
+    Returns:
+        Optional[models.User]: ユーザーオブジェクト、見つからない場合はNone
+    """
+    return db.query(models.User).filter(models.User.google_id == google_id).first()
+
+
+def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+    """
+    新しいユーザーを作成
+
+    Args:
+        db: データベースセッション
+        user: ユーザー作成スキーマ
+
+    Returns:
+        models.User: 作成されたユーザーオブジェクト
+    """
+    db_user = models.User(
+        email=user.email,
+        google_id=user.google_id,
+        name=user.name,
+        picture=user.picture,
+        user_type=user.user_type,
+        is_active=True
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    logger.info(f"Created new user: {db_user.email} (ID: {db_user.id})")
+    return db_user
+
+
+def update_user(
+    db: Session,
+    user_id: int,
+    user_update: schemas.UserUpdate
+) -> Optional[models.User]:
+    """
+    ユーザー情報を更新
+
+    Args:
+        db: データベースセッション
+        user_id: ユーザーID
+        user_update: ユーザー更新スキーマ
+
+    Returns:
+        Optional[models.User]: 更新されたユーザーオブジェクト、見つからない場合はNone
+    """
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+
+    update_data = user_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+
+    db.commit()
+    db.refresh(db_user)
+
+    logger.info(f"Updated user: {db_user.email} (ID: {db_user.id})")
+    return db_user
+
+
+def update_user_last_login(db: Session, user_id: int) -> Optional[models.User]:
+    """
+    ユーザーの最終ログイン日時を更新
+
+    Args:
+        db: データベースセッション
+        user_id: ユーザーID
+
+    Returns:
+        Optional[models.User]: 更新されたユーザーオブジェクト、見つからない場合はNone
+    """
+    from datetime import datetime
+
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+
+    db_user.last_login = datetime.utcnow()
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
+
+
+def get_or_create_user(
+    db: Session,
+    google_user_info: schemas.GoogleUserInfo
+) -> models.User:
+    """
+    Google OAuth情報からユーザーを取得または作成
+
+    既存のユーザーがいれば取得し、いなければ新規作成する
+
+    Args:
+        db: データベースセッション
+        google_user_info: Googleユーザー情報
+
+    Returns:
+        models.User: ユーザーオブジェクト
+    """
+    # Google IDでユーザーを検索
+    db_user = get_user_by_google_id(db, google_user_info.id)
+
+    if db_user:
+        # 既存ユーザーの情報を更新（名前や画像が変更されている可能性）
+        from datetime import datetime
+        db_user.name = google_user_info.name
+        db_user.picture = google_user_info.picture
+        db_user.last_login = datetime.utcnow()
+        db.commit()
+        db.refresh(db_user)
+
+        logger.info(f"Found existing user: {db_user.email}")
+        return db_user
+
+    # 新規ユーザーを作成
+    user_create = schemas.UserCreate(
+        email=google_user_info.email,
+        google_id=google_user_info.id,
+        name=google_user_info.name,
+        picture=google_user_info.picture
+    )
+
+    return create_user(db, user_create)

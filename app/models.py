@@ -19,6 +19,59 @@ from sqlalchemy.sql import func
 from app.database import Base
 
 
+class User(Base):
+    """
+    ユーザー認証テーブル（Google OAuth）
+
+    Attributes:
+        id: 主キー
+        email: メールアドレス（ユニーク）
+        google_id: Google ID（ユニーク）
+        name: 表示名
+        picture: プロフィール画像URL
+        user_type: ユーザータイプ（junior/senior/admin）
+        is_active: アクティブフラグ
+        last_login: 最終ログイン日時
+        created_at: レコード作成日時
+        updated_at: レコード更新日時
+    """
+
+    __tablename__ = "users"
+
+    # Primary Key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Google OAuth Information
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    google_id = Column(String(255), nullable=False, unique=True, index=True)
+    name = Column(String(100), nullable=False)
+    picture = Column(String(500), nullable=True)
+
+    # User Classification
+    user_type = Column(String(20), nullable=True, index=True)
+
+    # Status
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    last_login = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(
+            "user_type IS NULL OR user_type IN ('junior', 'senior', 'admin')",
+            name="check_user_type",
+        ),
+        Index("idx_users_email", "email"),
+        Index("idx_users_google_id", "google_id"),
+    )
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email}, name={self.name})>"
+
+
 class Junior(Base):
     """
     後輩（質問者）テーブル
