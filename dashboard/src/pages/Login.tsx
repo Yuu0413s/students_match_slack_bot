@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 export const Login: React.FC = () => {
-  const { loginWithGoogle, userRole, loginAsTestAdmin, loading, currentUser } = useAuth();
+  const { loginWithGoogle, userRole, loading, currentUser } = useAuth();
 
   // デバッグ用ログ
   useEffect(() => {

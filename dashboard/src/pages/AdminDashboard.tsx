@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-// 型定義
 interface SeniorData {
   id: number;
   email: string;
@@ -50,29 +49,28 @@ export const AdminDashboard: React.FC = () => {
   // 入力変更
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!editForm) return;
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+      setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
 
   // 保存
   const handleSave = async () => {
     if (!editForm) return;
-    try {
-      const res = await fetch(`http://localhost:3001/api/seniors/${editForm.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      });
-      if (res.ok) {
-        setEditingId(null);
-        fetchSeniors();
-        alert("更新しました");
-      }
+      try {
+        const res = await fetch(`http://localhost:3001/api/seniors/${editForm.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editForm),
+        });
+        if (res.ok) {
+          setEditingId(null);
+          fetchSeniors();
+          alert("更新しました");
+        }
     } catch (err) { console.error(err); }
   };
 
   return (
     <div className="admin-container">
-      {/* ヘッダーエリア */}
       <div className="admin-header">
         <h2 className="admin-title">管理者ダッシュボード</h2>
         <button onClick={logout} className="btn-logout">ログアウト</button>
@@ -82,7 +80,6 @@ export const AdminDashboard: React.FC = () => {
 
       <h3 className="section-title">登録ユーザー編集</h3>
 
-      {/* テーブルエリア */}
       <div className="table-wrapper">
         <table className="admin-table">
           <thead>
@@ -94,6 +91,7 @@ export const AdminDashboard: React.FC = () => {
               <th className="admin-th w-40">操作</th>
             </tr>
           </thead>
+
           <tbody>
             {seniors.map((senior) => {
               const isEditing = editingId === senior.id;
@@ -101,52 +99,49 @@ export const AdminDashboard: React.FC = () => {
                 <tr key={senior.id} className="admin-tr">
                   <td className="admin-td font-bold text-gray-400">{senior.id}</td>
 
-                  {/* 名前 */}
-                  <td className="admin-td">
-                    {isEditing && editForm ? (
-                      <div className="edit-group">
-                        <input
-                          name="last_name"
-                          value={editForm.last_name}
-                          onChange={handleChange}
-                          className="edit-input"
-                          placeholder="姓"
-                        />
-                        <input
-                          name="first_name"
-                          value={editForm.first_name}
-                          onChange={handleChange}
-                          className="edit-input"
-                          placeholder="名"
-                        />
-                      </div>
-                    ) : (
-                      <span className="font-bold">{senior.last_name} {senior.first_name}</span>
-                    )}
-                  </td>
+                    <td className="admin-td">
+                      {isEditing && editForm ? (
+                        <div className="edit-group">
+                          <input
+                            name="last_name"
+                            value={editForm.last_name}
+                            onChange={handleChange}
+                            className="edit-input"
+                            placeholder="姓"
+                          />
+                          <input
+                            name="first_name"
+                            value={editForm.first_name}
+                            onChange={handleChange}
+                            className="edit-input"
+                            placeholder="名"
+                          />
+                        </div>
+                      ) : (
+                        <span className="font-bold">{senior.last_name} {senior.first_name}</span>
+                      )}
+                    </td>
 
-                  {/* 学年（プルダウンに変更） */}
-                  <td className="admin-td">
-                    {isEditing && editForm ? (
-                      <select
-                        name="grade"
-                        value={editForm.grade}
-                        onChange={handleChange}
-                        className="edit-select w-28" // 幅を少し調整
-                      >
+                    <td className="admin-td">
+                      {isEditing && editForm ? (
+                        <select
+                          name="grade"
+                          value={editForm.grade}
+                          onChange={handleChange}
+                          className="edit-select w-28"
+                        >
                           <option value="">選択</option>
-                          {GRADE_OPTIONS.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                      </select>
-                    ) : (
-                      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm">
-                        {senior.grade}
-                      </span>
-                    )}
-                  </td>
+                            {GRADE_OPTIONS.map((option) => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                      ) : (
+                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm">
+                          {senior.grade}
+                        </span>
+                      )}
+                    </td>
 
-                  {/* ステータス */}
                   <td className="admin-td">
                     {isEditing && editForm ? (
                       <select
@@ -165,7 +160,6 @@ export const AdminDashboard: React.FC = () => {
                     )}
                   </td>
 
-                  {/* 操作ボタン */}
                   <td className="admin-td">
                     {isEditing ? (
                       <>

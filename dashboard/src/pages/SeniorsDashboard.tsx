@@ -9,7 +9,6 @@ interface SeniorData {
   department: string;
   internship_experience: string;
   availability_status: number;
-  // job_search_completion はDBエラー回避のため削除しました
 }
 
 // 選択肢の定義
@@ -39,32 +38,32 @@ export const SenpaiDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser?.email) return;
-    fetch(`http://localhost:3001/api/seniors/${currentUser.email}`)
-      .then(res => res.json())
-      .then(data => {
-        setMyData(data);
-        setEditForm(data);
-      })
+      fetch(`http://localhost:3001/api/seniors/${currentUser.email}`)
+        .then(res => res.json())
+        .then(data => {
+          setMyData(data);
+          setEditForm(data);
+        })
       .catch(err => console.error(err));
   }, [currentUser]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!editForm) return;
-    const { name, value } = e.target;
-    setEditForm({
-      ...editForm,
-      [name]: name === 'availability_status' ? parseInt(value, 10) : value
-    });
+      const { name, value } = e.target;
+      setEditForm({
+        ...editForm,
+        [name]: name === 'availability_status' ? parseInt(value, 10) : value
+      });
   };
 
   const handleSave = async () => {
     if (!editForm) return;
-    try {
-      const res = await fetch(`http://localhost:3001/api/seniors/${editForm.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      });
+      try {
+        const res = await fetch(`http://localhost:3001/api/seniors/${editForm.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editForm),
+        });
 
       if (res.ok) {
         setMyData(editForm);
@@ -97,7 +96,7 @@ export const SenpaiDashboard: React.FC = () => {
           <div className="senior-card-header">
             <h3 className="senior-card-title">📋 あなたの登録情報</h3>
 
-            {/* 編集モード切替ボタン (表示モード時のみ) */}
+            {/* 編集モード切替ボタン */}
             {!isEditing && (
               <button onClick={() => setIsEditing(true)} className="btn-edit-mode">
                 ✏️ 編集する
@@ -107,7 +106,7 @@ export const SenpaiDashboard: React.FC = () => {
 
           <div className="senior-card-body">
             {!isEditing ? (
-              // --- 表示モード ---
+              // 表示モード
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="info-row">
@@ -142,7 +141,7 @@ export const SenpaiDashboard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              // --- 編集モード ---
+              // 編集モード
               <div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="senior-form-group">
@@ -160,7 +159,7 @@ export const SenpaiDashboard: React.FC = () => {
                     <label className="info-label">学科</label>
                     <input name="department" value={editForm.department || ''} onChange={handleChange} className="senior-input" placeholder="例：データサイエンス学科" />
                   </div>
-                  {/* 学年：プルダウンに変更 */}
+                  {/* 学年 */}
                   <div className="senior-form-group">
                     <label className="info-label">学年</label>
                     <select
@@ -185,7 +184,7 @@ export const SenpaiDashboard: React.FC = () => {
                   </select>
                 </div>
 
-                {/* インターン経験：プルダウンに変更 */}
+                {/* インターン経験 */}
                 <div className="senior-form-group">
                   <label className="info-label">インターン経験</label>
                   <select

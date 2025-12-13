@@ -1,9 +1,8 @@
-// src/App.tsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth, type UserRole } from './context/AuthContext';
 import { Login } from './pages/Login';
-import { SenpaiDashboard } from './pages/SeniorsDashboard'; // ファイル名注意: SeniorsDashboard? SenpaiDashboard?
+import { SenpaiDashboard } from './pages/SeniorsDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 
 // 権限チェック用ラッパー
