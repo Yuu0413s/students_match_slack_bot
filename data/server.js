@@ -17,6 +17,10 @@ const db = new sqlite3.Database('./muds_matching.db', (err) => {
     }
 });
 
+// ==========================================
+// 認証・ユーザー判定 API
+// ==========================================
+
 // 1. ログイン検証用API
 app.post('/api/verify-user', (req, res) => {
     const { email } = req.body;
@@ -37,7 +41,6 @@ app.post('/api/verify-user', (req, res) => {
 
         if (row) {
             // ユーザーが見つかった場合
-            // フロントエンドに合わせて 'SENIOR' を返します
             return res.json({
                 role: 'SENIOR',
                 name: row.last_name ? `${row.last_name} ${row.first_name}` : '名無し先輩'
@@ -48,6 +51,10 @@ app.post('/api/verify-user', (req, res) => {
         }
     });
 });
+
+// ==========================================
+// 先輩 (Seniors) 関連 API
+// ==========================================
 
 // 2. 先輩個人データ取得用API
 app.get('/api/seniors/:email', (req, res) => {
@@ -82,15 +89,12 @@ app.get('/api/seniors', (req, res) => {
 // 4. 先輩データの更新用API (編集機能)
 app.put('/api/seniors/:id', (req, res) => {
     const { id } = req.params;
-    // job_search_completion を削除しました
     const {
         last_name, first_name, grade, department,
         internship_experience,
         availability_status
     } = req.body;
 
-    // SQLからも job_search_completion を削除
-    // また、department が抜けていたため追加しました
     const sql = `
         UPDATE seniors
         SET last_name = ?,
@@ -102,7 +106,6 @@ app.put('/api/seniors/:id', (req, res) => {
         WHERE id = ?
     `;
 
-    // 配列からも job_search_completion を削除し、department を適切な位置に追加
     db.run(sql, [
         last_name,
         first_name,
@@ -120,7 +123,60 @@ app.put('/api/seniors/:id', (req, res) => {
     });
 });
 
+// ==========================================
+// 後輩 (Juniors) 関連 API
+// ==========================================
+
+// 5. 後輩全員取得用API（管理者用）
+app.get('/api/juniors', (req, res) => {
+    const sql = `SELECT * FROM juniors`;
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error("後輩データ取得エラー:", err);
+            return res.status(500).json({ error: 'DBエラー: 後輩データの取得に失敗しました' });
+        }
+        res.json(rows);
+    });
+});
+
+// 6. 後輩データの更新用API
+app.put('/api/juniors/:id', (req, res) => {
+    const { id } = req.params;
+    const {
+        student_id,
+        last_name,
+        first_name,
+        grade
+    } = req.body;
+
+    const sql = `
+        UPDATE juniors
+        SET student_id = ?,
+            last_name = ?,
+            first_name = ?,
+            grade = ?
+        WHERE id = ?
+    `;
+
+    db.run(sql, [
+        student_id,
+        last_name,
+        first_name,
+        grade,
+        id
+    ], function(err) {
+        if (err) {
+            console.error("後輩データ更新エラー:", err);
+            return res.status(500).json({ error: '更新失敗' });
+        }
+        res.json({ message: '更新成功', changes: this.changes });
+    });
+});
+
+// ==========================================
 // サーバー起動
+// ==========================================
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
