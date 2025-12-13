@@ -34,12 +34,6 @@ export const Login: React.FC = () => {
           Googleでログイン
         </button>
 
-        <div className="dev-section">
-          <small className="dev-label">開発者用オプション</small>
-          <button onClick={loginAsTestAdmin} className="btn-dev">
-            管理者テストログイン
-          </button>
-        </div>
       </div>
     </div>
   );

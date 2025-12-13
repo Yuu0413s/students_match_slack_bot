@@ -14,6 +14,17 @@ interface SeniorData {
   internship_experience: string;
 }
 
+// 学年の選択肢定義
+const GRADE_OPTIONS = [
+  "学部1年",
+  "学部2年",
+  "学部3年",
+  "学部4年",
+  "修士1年",
+  "修士2年",
+  "卒業生"
+];
+
 export const AdminDashboard: React.FC = () => {
   const { logout } = useAuth();
   const [seniors, setSeniors] = useState<SeniorData[]>([]);
@@ -68,7 +79,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       <hr className="mb-6 border-red-200" />
-      
+
       <h3 className="section-title">登録ユーザー編集</h3>
 
       {/* テーブルエリア */}
@@ -94,18 +105,18 @@ export const AdminDashboard: React.FC = () => {
                   <td className="admin-td">
                     {isEditing && editForm ? (
                       <div className="edit-group">
-                        <input 
-                          name="last_name" 
-                          value={editForm.last_name} 
-                          onChange={handleChange} 
-                          className="edit-input" 
+                        <input
+                          name="last_name"
+                          value={editForm.last_name}
+                          onChange={handleChange}
+                          className="edit-input"
                           placeholder="姓"
                         />
-                        <input 
-                          name="first_name" 
-                          value={editForm.first_name} 
-                          onChange={handleChange} 
-                          className="edit-input" 
+                        <input
+                          name="first_name"
+                          value={editForm.first_name}
+                          onChange={handleChange}
+                          className="edit-input"
                           placeholder="名"
                         />
                       </div>
@@ -114,15 +125,20 @@ export const AdminDashboard: React.FC = () => {
                     )}
                   </td>
 
-                  {/* 学年 */}
+                  {/* 学年（プルダウンに変更） */}
                   <td className="admin-td">
                     {isEditing && editForm ? (
-                      <input 
-                        name="grade" 
-                        value={editForm.grade} 
-                        onChange={handleChange} 
-                        className="edit-input w-24" 
-                      />
+                      <select
+                        name="grade"
+                        value={editForm.grade}
+                        onChange={handleChange}
+                        className="edit-select w-28" // 幅を少し調整
+                      >
+                          <option value="">選択</option>
+                          {GRADE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                      </select>
                     ) : (
                       <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm">
                         {senior.grade}
@@ -133,9 +149,9 @@ export const AdminDashboard: React.FC = () => {
                   {/* ステータス */}
                   <td className="admin-td">
                     {isEditing && editForm ? (
-                      <select 
-                        name="availability_status" 
-                        value={editForm.availability_status} 
+                      <select
+                        name="availability_status"
+                        value={editForm.availability_status}
                         onChange={handleChange}
                         className="edit-select"
                       >

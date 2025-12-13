@@ -9,7 +9,27 @@ interface SeniorData {
   department: string;
   internship_experience: string;
   availability_status: number;
+  // job_search_completion はDBエラー回避のため削除しました
 }
+
+// 選択肢の定義
+const GRADE_OPTIONS = [
+  "学部1年",
+  "学部2年",
+  "学部3年",
+  "学部4年",
+  "修士1年",
+  "修士2年",
+  "卒業生"
+];
+
+const INTERNSHIP_OPTIONS = [
+  "なし",
+  "短期インターン(1day~5day)参加経験あり",
+  "中期インターン(1週間~2週間)参加経験あり",
+  "長期インターン(1ヶ月以上)参加経験あり",
+  "長期インターン(計3か月以上) 経験あり"
+];
 
 export const SenpaiDashboard: React.FC = () => {
   const { logout, currentUser } = useAuth();
@@ -63,7 +83,7 @@ export const SenpaiDashboard: React.FC = () => {
   return (
     <div className="senior-container">
       <div className="senior-wrapper">
-        
+
         {/* ヘッダー */}
         <div className="senior-header">
           <h2 className="senior-title">先輩用ダッシュボード</h2>
@@ -76,7 +96,7 @@ export const SenpaiDashboard: React.FC = () => {
         <div className="senior-card">
           <div className="senior-card-header">
             <h3 className="senior-card-title">📋 あなたの登録情報</h3>
-            
+
             {/* 編集モード切替ボタン (表示モード時のみ) */}
             {!isEditing && (
               <button onClick={() => setIsEditing(true)} className="btn-edit-mode">
@@ -140,9 +160,20 @@ export const SenpaiDashboard: React.FC = () => {
                     <label className="info-label">学科</label>
                     <input name="department" value={editForm.department || ''} onChange={handleChange} className="senior-input" placeholder="例：データサイエンス学科" />
                   </div>
+                  {/* 学年：プルダウンに変更 */}
                   <div className="senior-form-group">
                     <label className="info-label">学年</label>
-                    <input name="grade" value={editForm.grade || ''} onChange={handleChange} className="senior-input" />
+                    <select
+                      name="grade"
+                      value={editForm.grade || ''}
+                      onChange={handleChange}
+                      className="senior-select"
+                    >
+                      <option value="">選択してください</option>
+                      {GRADE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -154,9 +185,20 @@ export const SenpaiDashboard: React.FC = () => {
                   </select>
                 </div>
 
+                {/* インターン経験：プルダウンに変更 */}
                 <div className="senior-form-group">
                   <label className="info-label">インターン経験</label>
-                  <input name="internship_experience" value={editForm.internship_experience || ''} onChange={handleChange} className="senior-input" />
+                  <select
+                    name="internship_experience"
+                    value={editForm.internship_experience || ''}
+                    onChange={handleChange}
+                    className="senior-select"
+                  >
+                    <option value="">選択してください</option>
+                    {INTERNSHIP_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="mt-6 flex justify-end">
