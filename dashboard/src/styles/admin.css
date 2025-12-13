@@ -1,0 +1,79 @@
+/* 全体のレイアウト */
+.admin-container {
+    @apply min-h-screen bg-red-50 p-6;
+}
+
+/* ヘッダー周り */
+.admin-header {
+    @apply flex justify-between items-center mb-6;
+}
+
+.admin-title {
+    @apply text-2xl font-bold text-red-700;
+}
+
+.btn-logout {
+    @apply px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded shadow-sm hover:bg-gray-50 transition-colors font-medium;
+}
+
+.section-title {
+    @apply text-lg font-bold text-gray-700 mb-4 border-l-4 border-red-500 pl-3;
+}
+
+/* テーブル周り */
+.table-wrapper {
+    @apply bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200;
+}
+
+.admin-table {
+    @apply w-full border-collapse text-left;
+}
+
+.admin-th {
+    @apply bg-red-100 text-red-900 font-semibold p-4 whitespace-nowrap;
+}
+
+.admin-tr {
+    @apply border-b border-gray-100 hover:bg-red-50/30 transition-colors;
+}
+
+.admin-td {
+    @apply p-4 text-gray-700 align-middle;
+}
+
+/* 編集フォーム要素 */
+.edit-group {
+    @apply flex gap-2;
+}
+
+.edit-input {
+    @apply w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 bg-white;
+}
+
+.edit-select {
+    @apply w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer;
+}
+
+/* ステータスバッジ */
+.status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-bold inline-block;
+}
+.status-active {
+    @apply bg-green-100 text-green-800;
+}
+.status-inactive {
+    @apply bg-red-100 text-red-800;
+}
+
+/* 操作ボタン */
+.btn-save {
+    @apply px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium shadow-sm transition-colors;
+}
+
+.btn-cancel {
+    @apply px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm font-medium transition-colors ml-2;
+}
+
+.btn-edit {
+    @apply text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors;
+}

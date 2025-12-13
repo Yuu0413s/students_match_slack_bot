@@ -1,0 +1,44 @@
+/* ログイン画面全体 */
+.login-container {
+    @apply min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4;
+}
+
+/* ログインカード */
+.login-card {
+    @apply bg-white p-10 rounded-xl shadow-lg w-full max-w-md flex flex-col items-center border border-gray-100;
+}
+
+.login-title {
+    @apply text-2xl font-bold text-gray-800 mb-2;
+}
+
+.login-text {
+    @apply text-gray-500 mb-8 text-sm;
+}
+
+/* Googleログインボタン */
+.btn-google {
+    @apply w-full py-3 px-4 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium rounded-lg transition-colors shadow-md flex items-center justify-center gap-2;
+}
+
+.btn-google:disabled {
+    @apply opacity-70 cursor-not-allowed;
+}
+
+/* 開発者用エリア */
+.dev-section {
+    @apply mt-10 pt-6 border-t border-gray-100 w-full flex flex-col items-center gap-2;
+}
+
+.dev-label {
+    @apply text-xs text-gray-400 font-bold uppercase tracking-wider;
+}
+
+.btn-dev {
+    @apply text-sm text-gray-500 hover:text-gray-900 underline bg-transparent border-none cursor-pointer transition-colors;
+}
+
+/* ローディング表示 */
+.loading-text {
+    @apply text-blue-500 text-sm font-bold mb-4 animate-pulse;
+}

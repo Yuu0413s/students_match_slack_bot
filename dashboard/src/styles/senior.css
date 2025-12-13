@@ -1,0 +1,82 @@
+/* 全体のレイアウト */
+.senior-container {
+    @apply min-h-screen bg-blue-50 p-6 flex justify-center;
+}
+
+.senior-wrapper {
+    @apply w-full max-w-3xl;
+}
+
+/* ヘッダー */
+.senior-header {
+    @apply flex justify-between items-center mb-6;
+}
+
+.senior-title {
+    @apply text-2xl font-bold text-blue-700;
+}
+
+/* カードスタイル */
+.senior-card {
+    @apply bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden;
+}
+
+.senior-card-header {
+    @apply px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white;
+}
+
+.senior-card-title {
+    @apply text-lg font-bold text-gray-700 flex items-center gap-2;
+}
+
+.senior-card-body {
+    @apply p-6;
+}
+
+/* データ表示行 */
+.info-row {
+    @apply mb-4 pb-2 border-b border-gray-50 last:border-0;
+}
+
+.info-label {
+    @apply text-xs font-bold text-gray-400 uppercase tracking-wide mb-1;
+}
+
+.info-value {
+    @apply text-base text-gray-800 font-medium;
+}
+
+/* フォーム要素 */
+.senior-form-group {
+    @apply mb-4;
+}
+
+.senior-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50 focus:bg-white;
+}
+
+.senior-select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer;
+}
+
+/* ボタン */
+.btn-edit-mode {
+    @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors;
+}
+
+.btn-save {
+    @apply px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-sm transition-colors mr-2;
+}
+
+.btn-cancel {
+    @apply px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition-colors;
+}
+
+/* ステータスバッジ */
+.status-badge-active {
+    @apply bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold;
+}
+
+.status-badge-inactive {
+    @apply bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold;
+}

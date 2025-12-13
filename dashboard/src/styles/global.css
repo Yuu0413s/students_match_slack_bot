@@ -1,0 +1,8 @@
+@import './login.css';
+@import './dashboard.css';
+@import './admin.css';
+@import './senior.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
